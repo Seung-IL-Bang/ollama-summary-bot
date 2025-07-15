@@ -4,17 +4,37 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 from typing import List, Dict
 import re
+import json
 
 class RSSProcessor:
     """RSS 피드를 처리하고 기사 내용을 추출하는 클래스"""
-    def __init__(self):
-        self.tech_blogs = {
-            "Naver D2": "https://d2.naver.com/d2.atom"
-        }
+    def __init__(self, rss_file: str = "rss_blogs.json"):
+        self.rss_file = rss_file
+        self.tech_blogs = self._load_blogs()
+
+    def _load_blogs(self) -> Dict[str, str]:
+        try:
+            with open(self.rss_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {}
+
+    def _save_blogs(self):
+        with open(self.rss_file, "w", encoding="utf-8") as f:
+            json.dump(self.tech_blogs, f, ensure_ascii=False, indent=2)
 
     def get_available_blogs(self) -> Dict[str, str]:
         """사용 가능한 기술 블로그 목록 반환"""
         return self.tech_blogs
+
+    def add_blog(self, name: str, url: str):
+        self.tech_blogs[name] = url
+        self._save_blogs()
+
+    def delete_blog(self, name: str):
+        if name in self.tech_blogs:
+            del self.tech_blogs[name]
+            self._save_blogs()
 
     def fetch_rss_feed(self, rss_url: str, max_entries: int = 10) -> List[Dict]:
         """RSS 피드를 가져오고 최대 max_entries개의 항목을 반환"""
